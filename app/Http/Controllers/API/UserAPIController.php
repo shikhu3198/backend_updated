@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Response;
 use Prettus\Validator\Exceptions\ValidatorException;
+use Mail;
 
 class UserAPIController extends Controller
 {
@@ -100,12 +101,12 @@ class UserAPIController extends Controller
      */
     function register(Request $request)
     {
-        $user = User::all()->where('email', $request->input('email'))->orWhere('phone', $request->input('phone'))->first();
+        $user = User::where('email', $request->input('email'))->orWhere('phone', $request->input('phone'))->first();
 
         if ($user) {
             return $this->sendError('Account already exists.');
         } 
-
+        
         $user = new User;
         $user->name = $request->input('name');
         $user->email = $request->input('email');
@@ -121,6 +122,17 @@ class UserAPIController extends Controller
         $user->addMediaFromUrl("https://na.ui-avatars.com/api/?name=" . str_replace(" ", "+", $user->name))
             ->withCustomProperties(['uuid' => bcrypt(str_random())])
             ->toMediaCollection('avatar');
+
+        // 15-05-2020
+        $to_name =  $request->input('name');
+        $to_email =   $request->input('email');
+        $data = array("email" => $to_email , "name" => $to_name);
+        Mail::send("auth.emails.welcome", $data, function($message) use ($to_name, $to_email) {
+        $message->to($to_email, $to_name)
+        ->subject("ברוך הבא למסעדות מולטי");
+        $message->from("delivery@tazmin.net","From Admin");
+        });
+        // 15-05-2020
 
         return $this->sendResponse($user, 'User retrieved successfully');
     }
