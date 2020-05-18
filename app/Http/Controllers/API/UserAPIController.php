@@ -39,6 +39,22 @@ class UserAPIController extends Controller
     function login(Request $request)
     {
         $otp = $request->input('isOtpVerified');
+        $isForRegister = $request->input('isForRegister');
+
+        if($otp == 'true' && $isForRegister == 'true')
+        {
+            $user_data = User::where('email', $request->input('email'))->orWhere('phone', $request->input('phone'))->where('is_active','1')->first();
+            
+            if (!$user_data) {
+                $data = null;
+                return $this->sendResponse($data,'This phone is not registered');                           
+            }
+            else
+            {
+                return $this->sendResponse($user_data, 'User retrieved successfully');
+            }
+        }
+
         if($otp == 'true')
         {
             $user = User::all()->where('phone', $request->input('phone'))->where('is_active','1')->first();
@@ -106,6 +122,7 @@ class UserAPIController extends Controller
         if ($user) {
             return $this->sendError('Account already exists.');
         } 
+        
         
         $user = new User;
         $user->name = $request->input('name');
